@@ -10,7 +10,6 @@ from unet3d.metrics import (dice_coefficient, dice_coefficient_loss, dice_coef, 
 
 K.set_image_dim_ordering('th')
 
-
 # learning rate schedule
 def step_decay(epoch, initial_lrate, drop, epochs_drop):
     return initial_lrate * math.pow(drop, math.floor((1+epoch)/float(epochs_drop)))
@@ -32,13 +31,18 @@ def get_callbacks(model_file, initial_learning_rate=0.0001, learning_rate_drop=0
         callbacks.append(EarlyStopping(verbose=verbosity, patience=early_stopping_patience))
     return callbacks
 
+def threshold_binarize(x, threshold=0.1):
+    greater = K.greater_equal(x, K.constant(threshold))
+    return K.cast(greater, dtype=K.floatx()) #will convert bool to 0 and 1
 
 def load_old_model(model_file):
     print("Loading pre-trained model")
     custom_objects = {'dice_coefficient_loss': dice_coefficient_loss, 'dice_coefficient': dice_coefficient,
                       'dice_coef': dice_coef, 'dice_coef_loss': dice_coef_loss,
                       'weighted_dice_coefficient': weighted_dice_coefficient,
-                      'weighted_dice_coefficient_loss': weighted_dice_coefficient_loss}
+                      'weighted_dice_coefficient_loss': weighted_dice_coefficient_loss,
+                      'threshold_binarize': threshold_binarize,}
+
     try:
         from keras_contrib.layers import InstanceNormalization
         custom_objects["InstanceNormalization"] = InstanceNormalization
