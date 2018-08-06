@@ -16,3 +16,4 @@ test_dir
 *.hdr
 *.img
 /logs
+*.png
