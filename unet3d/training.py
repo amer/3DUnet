@@ -8,6 +8,29 @@ from keras.models import load_model
 from unet3d.metrics import (dice_coefficient, dice_coefficient_loss, dice_coef, dice_coef_loss,
                             weighted_dice_coefficient_loss, weighted_dice_coefficient)
 
+from keras.engine.topology import Layer
+
+class ThresholdedBinarize(Layer):
+    def __init__(self, theta=0.1, **kwargs):
+        super(ThresholdedBinarize, self).__init__(**kwargs)
+        self.theta = K.cast_to_floatx(theta)
+
+    def build(self, input_shape):
+        super(ThresholdedBinarize, self).build(input_shape)
+        self.trainable = False
+
+    def call(self, inputs):
+        #return inputs * K.cast(K.greater(inputs, self.theta), K.floatx())
+        return (inputs * 0)  +  K.cast(K.greater(inputs, self.theta), dtype=K.floatx())
+
+    def compute_output_shape(self, input_shape):
+        return input_shape
+    
+    def get_config(self):
+        config = {'theta': float(self.theta)}
+        base_config = super(ThresholdedBinarize, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
 K.set_image_dim_ordering('th')
 
 # learning rate schedule
@@ -41,7 +64,8 @@ def load_old_model(model_file):
                       'dice_coef': dice_coef, 'dice_coef_loss': dice_coef_loss,
                       'weighted_dice_coefficient': weighted_dice_coefficient,
                       'weighted_dice_coefficient_loss': weighted_dice_coefficient_loss,
-                      'threshold_binarize': threshold_binarize,}
+                      'threshold_binarize': threshold_binarize,
+		      'ThresholdedBinarize': ThresholdedBinarize}
 
     try:
         from keras_contrib.layers import InstanceNormalization
